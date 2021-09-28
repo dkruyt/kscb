@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: var-html
+          mountPath: /usr/share/nginx/html
+      - name: kscb
+        image: kscb
+        imagePullPolicy: Never
+        env:
+        - name: KSCB_SRC
+          value: "/usr/share/nginx/html"
+        - name: KSCB_DST
+          value: "oracle-ams:backup"
+        volumeMounts:
+        - name: var-html
+          mountPath: /usr/share/nginx/html
+        - name: crontab
+          mountPath: /crontab
+          subPath: crontab
+        - name: rclone
+          mountPath: /config/rclone/rclone.conf
+          subPath: rclone.conf
+      volumes:
+      - name: var-html
+        emptyDir: {}
+      - name: crontab
+        configMap:
+          name: crontab
+      - name: rclone
+        secret:
+          secretName: rclone
